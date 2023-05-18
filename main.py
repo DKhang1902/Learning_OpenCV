@@ -22,6 +22,7 @@ def average_slope_intercept(image, lines):
         else:
             right_fit.append((slope, intercept))
     left_fit_average = np.average(left_fit, axis = 0)
+    print(left_fit_average)
     right_fit_average = np.average(right_fit, axis=0)
     left_line = make_coordiantes(image, left_fit_average)
     right_line = make_coordiantes(image, right_fit_average)
@@ -42,12 +43,29 @@ def display_lines(image, lines):
     return line_image
 
 def region_of_interest(image):
-    height = image.shape[0]
-    triangle = np.array([[(200,height),(1100, height),(550, 250)]])
-    mask = np.zeros_like(image)
-    cv2.fillPoly(mask, triangle, 255)
-    masked_img = cv2.bitwise_and(image, mask)
-    return masked_img
+    """
+    Determine and cut the region of interest in the input image.
+        Parameters:
+            image: An np.array compatible with plt.imshow.
+    """
+    mask = np.zeros_like(image)   
+    #Defining a 3 channel or 1 channel color to fill the mask with depending on the input image
+    if len(image.shape) > 2:
+        channel_count = image.shape[2]
+        ignore_mask_color = (255,) * channel_count
+    else:
+        ignore_mask_color = 255
+    #We could have used fixed numbers as the vertices of the polygon,
+    #but they will not be applicable to images with different dimesnions.
+    rows, cols = image.shape[:2]
+    bottom_left  = [cols * 0.1, rows * 0.95]
+    top_left     = [cols * 0.4, rows * 0.6]
+    bottom_right = [cols * 0.9, rows * 0.95]
+    top_right    = [cols * 0.6, rows * 0.6]
+    vertices = np.array([[bottom_left, top_left, top_right, bottom_right]], dtype=np.int32)
+    cv2.fillPoly(mask, vertices, ignore_mask_color)
+    masked_image = cv2.bitwise_and(image, mask)
+    return masked_image
 
 # image = cv2.imread('test_image.jpg')
 # lane_image = np.copy(image)
@@ -63,7 +81,7 @@ def region_of_interest(image):
 # cv2.imshow("result", combo_image)
 # cv2.waitKey(0)
 
-cap = cv2.VideoCapture("mixkit.mp4")
+cap = cv2.VideoCapture("test2.mp4")
 while (cap.isOpened()):
     _, frame = cap.read()
     canny_img = canny(frame)
